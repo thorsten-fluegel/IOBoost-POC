@@ -1,5 +1,6 @@
 *.sdf
 *.suo
 *.opensdf
+*.vcxproj.user
 Release/
 Debug/
