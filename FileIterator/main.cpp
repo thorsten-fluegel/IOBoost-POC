@@ -46,9 +46,9 @@ std::list<std::wstring> filesInFolder(const std::wstring& path)
 }
 
 
-uint8_t filehash(const std::wstring& filename)
+uint64_t filehash(const std::wstring& filename)
 {
-	uint8_t hash = 0;
+	uint64_t hash = 0;
 	std::ifstream fileStream(filename, std::ios::binary);
 
 	if (fileStream)
@@ -60,9 +60,18 @@ uint8_t filehash(const std::wstring& filename)
 		char *buffer = new char[size];
 		fileStream.read(buffer, size);
 
-		for (size_t i = 0; i < size; ++i)
+		// 64-bit loop unrolling
+		uint64_t *buffer64 = reinterpret_cast<uint64_t*>(buffer);
+		size_t size64 = size / sizeof(uint64_t);
+		for (size_t i = 0; i < size64; ++i)
 		{
-			hash ^= buffer[i];
+			hash ^= buffer64[i];
+		}
+
+		// do the rest with 8-bit operations
+		for (size_t i = size64 * sizeof(uint64_t); i < size; ++i)
+		{
+			hash ^= (buffer[i] << ((i % sizeof(uint64_t))*8)); // calculate the number of bits to shift the 8-bit value from the buffer and xor it with the hash
 		}
 
 		delete[] buffer;
