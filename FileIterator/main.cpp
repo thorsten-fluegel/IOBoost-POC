@@ -9,6 +9,8 @@
 #include <chrono>
 #include <thread>
 #include <string>
+#include <vector>
+#include <ctime>
 #include <list>
 
 
@@ -96,6 +98,8 @@ std::chrono::duration<double> time(const std::function<void ()>& f)
 
 void wmain(int argc, wchar_t** argv)
 {
+	std::srand(unsigned(std::time(0)));
+
 	auto sleep_1s = []() {
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 	};
@@ -111,13 +115,22 @@ void wmain(int argc, wchar_t** argv)
 	}
 
 	uint8_t dummy_hash = 0;
-	auto hash_files = [&dummy_hash](const std::list<std::wstring>& file_list) {
+	auto hash_files = [&dummy_hash](const auto& file_list) {
 		for (auto& f : file_list)
 		{
 			dummy_hash ^= filehash(f);
 		}
 	};
 
+	std::vector<std::wstring> sorted_files(files.begin(), files.end());
+	std::vector<std::wstring> random_files(files.begin(), files.end());
+
+	std::sort(sorted_files.begin(), sorted_files.end());
+	std::random_shuffle(random_files.begin(), random_files.end());
+
 	std::wcout << L"slept for " << time(sleep_1s).count() << L"s" << std::endl;
-	std::wcout << L"hashing files took " << time(std::bind(hash_files, files)).count() << L"s" << std::endl;
+	std::wcout << L"hashing files (warmup) took " << time(std::bind(hash_files, files)).count() << L"s" << std::endl;
+	std::wcout << L"hashing files (alphabetic order) took " << time(std::bind(hash_files, sorted_files)).count() << L"s" << std::endl;
+	std::wcout << L"hashing files (random order) took " << time(std::bind(hash_files, random_files)).count() << L"s" << std::endl;
+	std::wcout << L"hashing files (original order) took " << time(std::bind(hash_files, files)).count() << L"s" << std::endl;
 }
