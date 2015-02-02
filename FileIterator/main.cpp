@@ -16,11 +16,11 @@ std::chrono::duration<double> time(std::function<void ()> f)
 }
 
 
-void main()
+void wmain(int argc, wchar_t** argv)
 {
 	auto sleep_1s = []() {
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 	};
 
-	std::cout << "slept for " << time(sleep_1s).count() << "s" << std::endl;
+	std::wcout << L"slept for " << time(sleep_1s).count() << L"s" << std::endl;
 }
