@@ -72,7 +72,7 @@ uint8_t filehash(const std::wstring& filename)
 }
 
 
-std::chrono::duration<double> time(std::function<void ()> f)
+std::chrono::duration<double> time(const std::function<void ()>& f)
 {
 	auto t_start = std::chrono::high_resolution_clock::now();
 
