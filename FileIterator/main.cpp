@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <iterator>
 #include <iostream>
+#include <fstream>
 #include <chrono>
 #include <thread>
 #include <string>
@@ -45,6 +46,32 @@ std::list<std::wstring> filesInFolder(const std::wstring& path)
 }
 
 
+uint8_t filehash(const std::wstring& filename)
+{
+	uint8_t hash = 0;
+	std::ifstream fileStream(filename, std::ios::binary);
+
+	if (fileStream)
+	{
+		fileStream.seekg(0, fileStream.end);
+		size_t size = static_cast<size_t>(fileStream.tellg());
+		fileStream.seekg(0, fileStream.beg);
+
+		char *buffer = new char[size];
+		fileStream.read(buffer, size);
+
+		for (size_t i = 0; i < size; ++i)
+		{
+			hash ^= buffer[i];
+		}
+
+		delete[] buffer;
+	}
+
+	return hash;
+}
+
+
 std::chrono::duration<double> time(std::function<void ()> f)
 {
 	auto t_start = std::chrono::high_resolution_clock::now();
@@ -74,13 +101,14 @@ void wmain(int argc, wchar_t** argv)
 		}
 	}
 
-	auto list_files = [](const std::list<std::wstring>& file_list) {
+	uint8_t dummy_hash = 0;
+	auto hash_files = [&dummy_hash](const std::list<std::wstring>& file_list) {
 		for (auto& f : file_list)
 		{
-			std::wcout << f << std::endl;
+			dummy_hash ^= filehash(f);
 		}
 	};
 
 	std::wcout << L"slept for " << time(sleep_1s).count() << L"s" << std::endl;
-	std::wcout << L"listing files took " << time(std::bind(list_files, files)).count() << L"s" << std::endl;
+	std::wcout << L"hashing files took " << time(std::bind(hash_files, files)).count() << L"s" << std::endl;
 }
