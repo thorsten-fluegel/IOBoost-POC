@@ -1,6 +1,7 @@
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include <winioctl.h>
 
 #include <algorithm>
 #include <iterator>
@@ -83,6 +84,59 @@ uint64_t filehash(const std::wstring& filename)
 }
 
 
+struct MyFile { std::wstring filename; DWORD64 clusterNumber; DWORD numFragments; };
+
+uint64_t GetStartCluster(const std::wstring& filename)
+{
+	uint64_t clusterNumber = 0;
+
+	HANDLE fileHandle = CreateFile(filename.c_str(), FILE_READ_ATTRIBUTES, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (INVALID_HANDLE_VALUE != fileHandle)
+	{
+		STARTING_VCN_INPUT_BUFFER input;
+		input.StartingVcn.QuadPart = 0;
+
+		// actually we only care about the first cluster number.
+		// DeviceIoControl doesn't seem to be able to return the number of number of bytes required, so we have to guess an initial value and increase it until it is big enough.
+		size_t maxClusters = 1;
+		size_t bufferSize = sizeof(RETRIEVAL_POINTERS_BUFFER) + (2 * (maxClusters - 1) * sizeof(LARGE_INTEGER)); // 2 because pairs of VCN and LCN values are returned in this buffer. The first pair is in the struct at the beginning
+		BYTE *output = new BYTE[bufferSize];
+
+		DWORD numBytesReturned = 0;
+		BOOL ok = false;
+		DWORD error = 0;
+
+		while (bufferSize < std::numeric_limits<DWORD>::max() &&
+			(ok = DeviceIoControl(fileHandle, FSCTL_GET_RETRIEVAL_POINTERS, &input, sizeof(input), output, (DWORD)bufferSize, &numBytesReturned, NULL)) == FALSE &&
+			(error = GetLastError()) == ERROR_MORE_DATA)
+		{
+			delete[] output;
+
+			maxClusters *= 2;
+			bufferSize = sizeof(RETRIEVAL_POINTERS_BUFFER) + (2 * (maxClusters - 1) * sizeof(LARGE_INTEGER));
+
+			output = new BYTE[bufferSize];
+		}
+
+		if (ok)
+		{
+			RETRIEVAL_POINTERS_BUFFER* p = (RETRIEVAL_POINTERS_BUFFER*)output;
+			if (p->ExtentCount > 0 && p->StartingVcn.QuadPart == 0)
+			{
+				//numFragments = p->ExtentCount;
+				clusterNumber = p->Extents[0].Lcn.QuadPart;
+			}
+		}
+
+		delete[] output;
+
+		CloseHandle(fileHandle);
+	}
+
+	return clusterNumber;
+}
+
+
 std::chrono::duration<double> time(const std::function<void ()>& f)
 {
 	auto t_start = std::chrono::high_resolution_clock::now();
@@ -122,15 +176,29 @@ void wmain(int argc, wchar_t** argv)
 		}
 	};
 
-	std::vector<std::wstring> sorted_files(files.begin(), files.end());
-	std::vector<std::wstring> random_files(files.begin(), files.end());
+	typedef std::pair<std::wstring, uint64_t> FileCluster;
+	std::vector<FileCluster> files_with_clusters;
+	for (auto& f : files)
+	{
+		files_with_clusters.emplace_back(f, GetStartCluster(f));
+	}
+	std::stable_sort(files_with_clusters.begin(), files_with_clusters.end(), [](const auto& left, const auto& right) { return left.second < right.second; });
 
-	std::sort(sorted_files.begin(), sorted_files.end());
+	std::vector<std::wstring> alphabetical_files(files.begin(), files.end());
+	std::vector<std::wstring> random_files(files.begin(), files.end());
+	std::vector<std::wstring> cluster_files;
+	for (auto& f : files_with_clusters)
+	{
+		cluster_files.push_back(f.first);
+	}
+
+	std::sort(alphabetical_files.begin(), alphabetical_files.end());
 	std::random_shuffle(random_files.begin(), random_files.end());
 
 	std::wcout << L"slept for " << time(sleep_1s).count() << L"s" << std::endl;
 	std::wcout << L"hashing files (warmup) took " << time(std::bind(hash_files, files)).count() << L"s" << std::endl;
-	std::wcout << L"hashing files (alphabetic order) took " << time(std::bind(hash_files, sorted_files)).count() << L"s" << std::endl;
+	std::wcout << L"hashing files (alphabetic order) took " << time(std::bind(hash_files, alphabetical_files)).count() << L"s" << std::endl;
 	std::wcout << L"hashing files (random order) took " << time(std::bind(hash_files, random_files)).count() << L"s" << std::endl;
-	std::wcout << L"hashing files (original order) took " << time(std::bind(hash_files, files)).count() << L"s" << std::endl;
+	std::wcout << L"hashing files (cluster order) took " << time(std::bind(hash_files, files)).count() << L"s" << std::endl;
+	std::wcout << L"hashing files (original order) took " << time(std::bind(hash_files, cluster_files)).count() << L"s" << std::endl;
 }
