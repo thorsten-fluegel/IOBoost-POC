@@ -49,7 +49,7 @@ std::list<std::wstring> filesInFolder(const std::wstring& path)
 }
 
 
-uint64_t filehash(const std::wstring& filename)
+uint64_t filehash(const std::wstring& filename, size_t maxSize = std::numeric_limits<size_t>::max())
 {
 	uint64_t hash = 0;
 	std::ifstream fileStream(filename, std::ios::binary);
@@ -57,7 +57,7 @@ uint64_t filehash(const std::wstring& filename)
 	if (fileStream)
 	{
 		fileStream.seekg(0, fileStream.end);
-		size_t size = static_cast<size_t>(fileStream.tellg());
+		size_t size = std::min(static_cast<size_t>(fileStream.tellg()), maxSize);
 		fileStream.seekg(0, fileStream.beg);
 
 		char *buffer = new char[size];
@@ -169,10 +169,10 @@ void wmain(int argc, wchar_t** argv)
 	}
 
 	uint8_t dummy_hash = 0;
-	auto hash_files = [&dummy_hash](const auto& file_list) {
+	auto hash_files = [&dummy_hash](const auto& file_list, size_t maxSize = std::numeric_limits<size_t>::max()) {
 		for (auto& f : file_list)
 		{
-			dummy_hash ^= filehash(f);
+			dummy_hash ^= filehash(f, maxSize);
 		}
 	};
 
@@ -196,6 +196,16 @@ void wmain(int argc, wchar_t** argv)
 	std::random_shuffle(random_files.begin(), random_files.end());
 
 	std::wcout << L"slept for " << time(sleep_1s).count() << L"s" << std::endl;
+
+	// hashing of first 64k
+	size_t _64k = 64 * 1024;
+	std::wcout << L"hashing files (64k, warmup) took " << time(std::bind(hash_files, files, _64k)).count() << L"s" << std::endl;
+	std::wcout << L"hashing files (64k, alphabetic order) took " << time(std::bind(hash_files, alphabetical_files, _64k)).count() << L"s" << std::endl;
+	std::wcout << L"hashing files (64k, random order) took " << time(std::bind(hash_files, random_files, _64k)).count() << L"s" << std::endl;
+	std::wcout << L"hashing files (64k, cluster order) took " << time(std::bind(hash_files, files, _64k)).count() << L"s" << std::endl;
+	std::wcout << L"hashing files (64k, original order) took " << time(std::bind(hash_files, cluster_files, _64k)).count() << L"s" << std::endl;
+
+	// full file hashing
 	std::wcout << L"hashing files (warmup) took " << time(std::bind(hash_files, files)).count() << L"s" << std::endl;
 	std::wcout << L"hashing files (alphabetic order) took " << time(std::bind(hash_files, alphabetical_files)).count() << L"s" << std::endl;
 	std::wcout << L"hashing files (random order) took " << time(std::bind(hash_files, random_files)).count() << L"s" << std::endl;
