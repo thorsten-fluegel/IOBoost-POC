@@ -216,14 +216,12 @@ void wmain(int argc, wchar_t** argv)
 
 		// hashing of first 64k
 		size_t _64k = 64 * 1024;
-		std::wcout << L"hashing files (64k, warmup) took " << time(std::bind(hash_files, files, _64k)).count() << L"s" << std::endl;
 		std::wcout << L"hashing files (64k, alphabetic order) took " << time(std::bind(hash_files, alphabetical_files, _64k)).count() << L"s" << std::endl;
 		std::wcout << L"hashing files (64k, random order) took " << time(std::bind(hash_files, random_files, _64k)).count() << L"s" << std::endl;
 		std::wcout << L"hashing files (64k, cluster order) took " << time(std::bind(hash_files, files, _64k)).count() << L"s" << std::endl;
 		std::wcout << L"hashing files (64k, original order) took " << time(std::bind(hash_files, cluster_files, _64k)).count() << L"s" << std::endl;
 
 		// full file hashing
-		std::wcout << L"hashing files (warmup) took " << time(std::bind(hash_files, files)).count() << L"s" << std::endl;
 		std::wcout << L"hashing files (alphabetic order) took " << time(std::bind(hash_files, alphabetical_files)).count() << L"s" << std::endl;
 		std::wcout << L"hashing files (random order) took " << time(std::bind(hash_files, random_files)).count() << L"s" << std::endl;
 		std::wcout << L"hashing files (cluster order) took " << time(std::bind(hash_files, files)).count() << L"s" << std::endl;
