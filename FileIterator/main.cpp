@@ -7,12 +7,14 @@
 #include <iterator>
 #include <iostream>
 #include <fstream>
+#include <utility>
 #include <chrono>
 #include <thread>
 #include <string>
 #include <vector>
 #include <ctime>
 #include <list>
+#include <map>
 
 
 std::list<std::wstring> filesInFolder(const std::wstring& path)
@@ -208,18 +210,29 @@ void wmain(int argc, wchar_t** argv)
 		std::sort(alphabetical_files.begin(), alphabetical_files.end());
 		std::random_shuffle(random_files.begin(), random_files.end());
 
-		// hashing of first 64k
 		size_t _64k = 64 * 1024;
-		std::wcout << L"hashing files (64k, alphabetic order) took " << time(std::bind(hash_files, alphabetical_files, _64k)).count() << L"s" << std::endl;
-		std::wcout << L"hashing files (64k, random order) took " << time(std::bind(hash_files, random_files, _64k)).count() << L"s" << std::endl;
-		std::wcout << L"hashing files (64k, cluster order) took " << time(std::bind(hash_files, files, _64k)).count() << L"s" << std::endl;
-		std::wcout << L"hashing files (64k, original order) took " << time(std::bind(hash_files, cluster_files, _64k)).count() << L"s" << std::endl;
+		std::map<std::wstring, std::pair<const std::function<void ()>, std::wstring>> test_map =
+		{
+			{ L"a64",{ std::bind(hash_files, alphabetical_files, _64k), L"alphabetic order, 64k" } },
+			{ L"r64",{ std::bind(hash_files, random_files, _64k),		L"random order, 64k" } },
+			{ L"f64",{ std::bind(hash_files, files, _64k),				L"filesystem order, 64k" } },
+			{ L"c64",{ std::bind(hash_files, cluster_files, _64k),		L"cluster order, 64k" } },
+			{ L"a",{ std::bind(hash_files, alphabetical_files),			L"alphabetic order" } },
+			{ L"r",{ std::bind(hash_files, random_files),				L"random order" } },
+			{ L"f",{ std::bind(hash_files, files),						L"filesystem order" } },
+			{ L"c",{ std::bind(hash_files, cluster_files),				L"cluster order" } }
+		};
 
-		// full file hashing
-		std::wcout << L"hashing files (alphabetic order) took " << time(std::bind(hash_files, alphabetical_files)).count() << L"s" << std::endl;
-		std::wcout << L"hashing files (random order) took " << time(std::bind(hash_files, random_files)).count() << L"s" << std::endl;
-		std::wcout << L"hashing files (cluster order) took " << time(std::bind(hash_files, files)).count() << L"s" << std::endl;
-		std::wcout << L"hashing files (original order) took " << time(std::bind(hash_files, cluster_files)).count() << L"s" << std::endl;
+		for (auto& option : options)
+		{
+			auto testIt = test_map.find(option);
+			if (testIt != test_map.end())
+			{
+				std::wcout << L"hashing " << files.size() << L" files (" << testIt->second.second << L")";
+				auto testDuration = time(testIt->second.first).count();
+				std::wcout << L" took " << testDuration << L"s" << std::endl;
+			}			
+		}
 	}
 	else
 	{
