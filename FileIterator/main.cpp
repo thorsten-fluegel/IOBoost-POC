@@ -152,10 +152,6 @@ void wmain(int argc, wchar_t** argv)
 {
 	std::srand(unsigned(std::time(0)));
 
-	auto sleep_1s = []() {
-		std::this_thread::sleep_for(std::chrono::seconds(1));
-	};
-
 	std::list<std::wstring> folders;
 	std::list<std::wstring> options;
 
@@ -211,8 +207,6 @@ void wmain(int argc, wchar_t** argv)
 
 		std::sort(alphabetical_files.begin(), alphabetical_files.end());
 		std::random_shuffle(random_files.begin(), random_files.end());
-
-		std::wcout << L"slept for " << time(sleep_1s).count() << L"s" << std::endl;
 
 		// hashing of first 64k
 		size_t _64k = 64 * 1024;
