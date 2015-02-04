@@ -183,47 +183,54 @@ void wmain(int argc, wchar_t** argv)
 		}
 	}
 
-	uint8_t dummy_hash = 0;
-	auto hash_files = [&dummy_hash](const auto& file_list, size_t maxSize = std::numeric_limits<size_t>::max()) {
-		for (auto& f : file_list)
+	if (!files.empty())
+	{
+		uint8_t dummy_hash = 0;
+		auto hash_files = [&dummy_hash](const auto& file_list, size_t maxSize = std::numeric_limits<size_t>::max()) {
+			for (auto& f : file_list)
+			{
+				dummy_hash ^= filehash(f, maxSize);
+			}
+		};
+
+		typedef std::pair<std::wstring, uint64_t> FileCluster;
+		std::vector<FileCluster> files_with_clusters;
+		for (auto& f : files)
 		{
-			dummy_hash ^= filehash(f, maxSize);
+			files_with_clusters.emplace_back(f, GetStartCluster(f));
 		}
-	};
+		std::stable_sort(files_with_clusters.begin(), files_with_clusters.end(), [](const auto& left, const auto& right) { return left.second < right.second; });
 
-	typedef std::pair<std::wstring, uint64_t> FileCluster;
-	std::vector<FileCluster> files_with_clusters;
-	for (auto& f : files)
-	{
-		files_with_clusters.emplace_back(f, GetStartCluster(f));
+		std::vector<std::wstring> alphabetical_files(files.begin(), files.end());
+		std::vector<std::wstring> random_files(files.begin(), files.end());
+		std::vector<std::wstring> cluster_files;
+		for (auto& f : files_with_clusters)
+		{
+			cluster_files.push_back(f.first);
+		}
+
+		std::sort(alphabetical_files.begin(), alphabetical_files.end());
+		std::random_shuffle(random_files.begin(), random_files.end());
+
+		std::wcout << L"slept for " << time(sleep_1s).count() << L"s" << std::endl;
+
+		// hashing of first 64k
+		size_t _64k = 64 * 1024;
+		std::wcout << L"hashing files (64k, warmup) took " << time(std::bind(hash_files, files, _64k)).count() << L"s" << std::endl;
+		std::wcout << L"hashing files (64k, alphabetic order) took " << time(std::bind(hash_files, alphabetical_files, _64k)).count() << L"s" << std::endl;
+		std::wcout << L"hashing files (64k, random order) took " << time(std::bind(hash_files, random_files, _64k)).count() << L"s" << std::endl;
+		std::wcout << L"hashing files (64k, cluster order) took " << time(std::bind(hash_files, files, _64k)).count() << L"s" << std::endl;
+		std::wcout << L"hashing files (64k, original order) took " << time(std::bind(hash_files, cluster_files, _64k)).count() << L"s" << std::endl;
+
+		// full file hashing
+		std::wcout << L"hashing files (warmup) took " << time(std::bind(hash_files, files)).count() << L"s" << std::endl;
+		std::wcout << L"hashing files (alphabetic order) took " << time(std::bind(hash_files, alphabetical_files)).count() << L"s" << std::endl;
+		std::wcout << L"hashing files (random order) took " << time(std::bind(hash_files, random_files)).count() << L"s" << std::endl;
+		std::wcout << L"hashing files (cluster order) took " << time(std::bind(hash_files, files)).count() << L"s" << std::endl;
+		std::wcout << L"hashing files (original order) took " << time(std::bind(hash_files, cluster_files)).count() << L"s" << std::endl;
 	}
-	std::stable_sort(files_with_clusters.begin(), files_with_clusters.end(), [](const auto& left, const auto& right) { return left.second < right.second; });
-
-	std::vector<std::wstring> alphabetical_files(files.begin(), files.end());
-	std::vector<std::wstring> random_files(files.begin(), files.end());
-	std::vector<std::wstring> cluster_files;
-	for (auto& f : files_with_clusters)
+	else
 	{
-		cluster_files.push_back(f.first);
+		std::wcout << L"no files found in the given folders" << std::endl;
 	}
-
-	std::sort(alphabetical_files.begin(), alphabetical_files.end());
-	std::random_shuffle(random_files.begin(), random_files.end());
-
-	std::wcout << L"slept for " << time(sleep_1s).count() << L"s" << std::endl;
-
-	// hashing of first 64k
-	size_t _64k = 64 * 1024;
-	std::wcout << L"hashing files (64k, warmup) took " << time(std::bind(hash_files, files, _64k)).count() << L"s" << std::endl;
-	std::wcout << L"hashing files (64k, alphabetic order) took " << time(std::bind(hash_files, alphabetical_files, _64k)).count() << L"s" << std::endl;
-	std::wcout << L"hashing files (64k, random order) took " << time(std::bind(hash_files, random_files, _64k)).count() << L"s" << std::endl;
-	std::wcout << L"hashing files (64k, cluster order) took " << time(std::bind(hash_files, files, _64k)).count() << L"s" << std::endl;
-	std::wcout << L"hashing files (64k, original order) took " << time(std::bind(hash_files, cluster_files, _64k)).count() << L"s" << std::endl;
-
-	// full file hashing
-	std::wcout << L"hashing files (warmup) took " << time(std::bind(hash_files, files)).count() << L"s" << std::endl;
-	std::wcout << L"hashing files (alphabetic order) took " << time(std::bind(hash_files, alphabetical_files)).count() << L"s" << std::endl;
-	std::wcout << L"hashing files (random order) took " << time(std::bind(hash_files, random_files)).count() << L"s" << std::endl;
-	std::wcout << L"hashing files (cluster order) took " << time(std::bind(hash_files, files)).count() << L"s" << std::endl;
-	std::wcout << L"hashing files (original order) took " << time(std::bind(hash_files, cluster_files)).count() << L"s" << std::endl;
 }
