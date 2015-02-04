@@ -84,8 +84,6 @@ uint64_t filehash(const std::wstring& filename, size_t maxSize = std::numeric_li
 }
 
 
-struct MyFile { std::wstring filename; DWORD64 clusterNumber; DWORD numFragments; };
-
 uint64_t GetStartCluster(const std::wstring& filename)
 {
 	uint64_t clusterNumber = 0;
