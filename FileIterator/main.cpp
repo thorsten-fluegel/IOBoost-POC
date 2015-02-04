@@ -158,10 +158,27 @@ void wmain(int argc, wchar_t** argv)
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 	};
 
+	std::list<std::wstring> folders;
+	std::list<std::wstring> options;
+
 	std::list<std::wstring> files;
 	for (auto i = 1; i < argc; ++i)
 	{
-		auto _files = filesInFolder(argv[i]);
+		std::wstring argument(argv[i]);
+
+		if (argument[0] == L'-')
+		{
+			options.push_back(argument.substr(1));
+		}
+		else
+		{
+			folders.push_back(argument);
+		}
+	}
+
+	for (auto& folder : folders)
+	{
+		auto _files = filesInFolder(folder);
 		for (auto& f : _files)
 		{
 			files.push_back(f);
