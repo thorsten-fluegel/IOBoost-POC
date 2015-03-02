@@ -172,14 +172,20 @@ void wmain(int argc, wchar_t** argv)
 		}
 	}
 
-	for (auto& folder : folders)
-	{
-		auto _files = filesInFolder(folder);
-		for (auto& f : _files)
+	auto obtainFiles = [&files, &folders]() {
+		for (auto& folder : folders)
 		{
-			files.push_back(f);
+			auto _files = filesInFolder(folder);
+			for (auto& f : _files)
+			{
+				files.push_back(f);
+			}
 		}
-	}
+	};
+
+	std::wcout << L"obtaining files";
+	auto obtainFilesDuration = time(obtainFiles).count();
+	std::wcout << L" took " << obtainFilesDuration << L"s" << std::endl;
 
 	if (!files.empty())
 	{
