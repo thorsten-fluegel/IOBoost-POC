@@ -157,7 +157,7 @@ void wmain(int argc, wchar_t** argv)
 	std::list<std::wstring> folders;
 	std::list<std::wstring> options;
 
-	std::list<std::wstring> files;
+	std::vector<std::wstring> files;
 	for (auto i = 1; i < argc; ++i)
 	{
 		std::wstring argument(argv[i]);
@@ -184,7 +184,7 @@ void wmain(int argc, wchar_t** argv)
 	if (!files.empty())
 	{
 		uint8_t dummy_hash = 0;
-		auto hash_files = [&dummy_hash](const auto& file_list, size_t maxSize = std::numeric_limits<size_t>::max()) {
+		auto hash_files = [&dummy_hash](const std::vector<std::wstring>& file_list, size_t maxSize = std::numeric_limits<size_t>::max()) {
 			for (auto& f : file_list)
 			{
 				dummy_hash ^= filehash(f, maxSize);
