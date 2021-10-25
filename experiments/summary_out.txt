@@ -1,0 +1,29 @@
+D__downloads:
+fastest: c64, 8.46s
+f64: 12.90s, 1.52x slower
+a64: 13.29s, 1.57x slower
+r64: 14.70s, 1.74x slower
+fastest: c, 205.82s
+f: 210.17s, 1.02x slower
+a: 211.22s, 1.03x slower
+r: 212.67s, 1.03x slower
+
+D__Program_Files_(x86):
+fastest: c64, 255.58s
+a64: 436.93s, 1.71x slower
+f64: 458.94s, 1.80x slower
+r64: 768.33s, 3.01x slower
+fastest: c, 479.97s
+a: 686.24s, 1.43x slower
+f: 710.04s, 1.48x slower
+r: 997.48s, 2.08x slower
+
+D__SteamLibrary:
+fastest: c64, 30.09s
+f64: 90.92s, 3.02x slower
+a64: 97.59s, 3.24x slower
+r64: 126.29s, 4.20x slower
+fastest: c, 216.94s
+f: 295.79s, 1.36x slower
+a: 303.63s, 1.40x slower
+r: 323.15s, 1.49x slower
